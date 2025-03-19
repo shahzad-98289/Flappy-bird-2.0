@@ -21,9 +21,10 @@
         /* Game Container */
         #game {
             position: relative;
-            width: 100vw; /* Full width of the screen */
-            height: 100vh; /* Full height of the screen */
+            width: 400px; /* Game width */
+            height: 600px; /* Game height */
             background-color: #70c5ce;
+            border: 2px solid #000;
             overflow: hidden;
         }
 
@@ -32,15 +33,17 @@
             position: absolute;
             top: 50%;
             left: 50px;
-            width: 40px; /* Adjust size for mobile */
-            height: 40px; /* Adjust size for mobile */
+            width: 40px; /* Bird width */
+            height: 40px; /* Bird height */
+            background-color: yellow;
+            border-radius: 50%;
             transition: top 0.1s ease;
         }
 
         /* Pipes */
         .pipe {
             position: absolute;
-            width: 60px;
+            width: 70px; /* Pipe width */
             background-color: green;
             transition: left 0.1s linear;
         }
@@ -118,15 +121,15 @@
         const flapSound = document.getElementById('flap-sound');
         const hitSound = document.getElementById('hit-sound');
 
-        let birdTop = 50; // Initial bird position
+        let birdTop = 250; // Initial bird position
         let gravity = 1.5; // Gravity strength
         let score = 0;
         let highScore = localStorage.getItem('highScore') || 0;
         let pipes = [];
         let gameInterval;
         let pipeInterval;
-        let pipeSpeed = 2;
-        let pipeGap = 150;
+        const pipeWidth = 70; // Pipe width
+        const pipeGap = 120; // Gap between pipes
 
         highScoreDisplay.textContent = `High Score: ${highScore}`;
 
@@ -149,23 +152,33 @@
 
         // Generate pipes
         function generatePipes() {
-            const pipeHeight = Math.random() * (game.clientHeight - pipeGap - 100) + 50;
+            const minPipeHeight = 100; // Minimum height for the top pipe
+            const maxPipeHeight = 400; // Maximum height for the top pipe
 
+            // Randomly generate the top pipe height
+            const topPipeHeight = Math.random() * (maxPipeHeight - minPipeHeight) + minPipeHeight;
+
+            // Create the top pipe
             const topPipe = document.createElement('div');
             topPipe.classList.add('pipe');
-            topPipe.style.height = pipeHeight + 'px';
+            topPipe.style.width = pipeWidth + 'px';
+            topPipe.style.height = topPipeHeight + 'px';
             topPipe.style.top = '0';
-            topPipe.style.left = game.clientWidth + 'px';
+            topPipe.style.left = game.clientWidth + 'px'; // Start pipes off-screen
 
+            // Create the bottom pipe
             const bottomPipe = document.createElement('div');
             bottomPipe.classList.add('pipe');
-            bottomPipe.style.height = (game.clientHeight - pipeHeight - pipeGap) + 'px';
+            bottomPipe.style.width = pipeWidth + 'px';
+            bottomPipe.style.height = (game.clientHeight - topPipeHeight - pipeGap) + 'px';
             bottomPipe.style.bottom = '0';
-            bottomPipe.style.left = game.clientWidth + 'px';
+            bottomPipe.style.left = game.clientWidth + 'px'; // Start pipes off-screen
 
+            // Add pipes to the game
             game.appendChild(topPipe);
             game.appendChild(bottomPipe);
 
+            // Store pipes for collision detection
             pipes.push({ top: topPipe, bottom: bottomPipe });
         }
 
@@ -173,11 +186,11 @@
         function movePipes() {
             pipes.forEach(pipe => {
                 const pipeLeft = parseFloat(pipe.top.style.left);
-                pipe.top.style.left = (pipeLeft - pipeSpeed) + 'px';
-                pipe.bottom.style.left = (pipeLeft - pipeSpeed) + 'px';
+                pipe.top.style.left = (pipeLeft - 2) + 'px'; // Pipe speed
+                pipe.bottom.style.left = (pipeLeft - 2) + 'px';
 
                 // Remove pipes when they go off-screen
-                if (pipeLeft < -60) {
+                if (pipeLeft < -pipeWidth) {
                     game.removeChild(pipe.top);
                     game.removeChild(pipe.bottom);
                     pipes.shift();
@@ -186,8 +199,7 @@
 
                     // Increase difficulty over time
                     if (score % 5 === 0) {
-                        pipeSpeed += 0.5;
-                        pipeGap -= 5;
+                        pipeGap -= 5; // Decrease gap between pipes
                     }
                 }
             });
@@ -231,10 +243,8 @@
         // Start the game
         function startGame() {
             startScreen.style.display = 'none';
-            birdTop = 50;
+            birdTop = 250;
             score = 0;
-            pipeSpeed = 2;
-            pipeGap = 150;
             pipes = [];
             scoreDisplay.textContent = '0';
 
