@@ -130,6 +130,8 @@
         let pipeInterval;
         const pipeWidth = 70; // Pipe width
         const pipeGap = 120; // Gap between pipes
+        let pipeSpeed = 4; // Pipe speed (pixels per frame)
+        let lastTime = 0; // For 60 FPS calculation
 
         highScoreDisplay.textContent = `High Score: ${highScore}`;
 
@@ -183,11 +185,15 @@
         }
 
         // Move pipes
-        function movePipes() {
+        function movePipes(timestamp) {
+            if (!lastTime) lastTime = timestamp;
+            const deltaTime = timestamp - lastTime; // Time since last frame
+            lastTime = timestamp;
+
             pipes.forEach(pipe => {
                 const pipeLeft = parseFloat(pipe.top.style.left);
-                pipe.top.style.left = (pipeLeft - 2) + 'px'; // Pipe speed
-                pipe.bottom.style.left = (pipeLeft - 2) + 'px';
+                pipe.top.style.left = (pipeLeft - pipeSpeed * (deltaTime / 16.67)) + 'px'; // Adjust for 60 FPS
+                pipe.bottom.style.left = (pipeLeft - pipeSpeed * (deltaTime / 16.67)) + 'px';
 
                 // Remove pipes when they go off-screen
                 if (pipeLeft < -pipeWidth) {
@@ -199,10 +205,13 @@
 
                     // Increase difficulty over time
                     if (score % 5 === 0) {
+                        pipeSpeed += 0.5; // Increase pipe speed
                         pipeGap -= 5; // Decrease gap between pipes
                     }
                 }
             });
+
+            requestAnimationFrame(movePipes); // Continue the loop
         }
 
         // Check for collisions
@@ -225,8 +234,7 @@
 
         // End the game
         function endGame() {
-            clearInterval(gameInterval);
-            clearInterval(pipeInterval);
+            cancelAnimationFrame(gameInterval);
             hitSound.play();
 
             // Update high score
@@ -245,14 +253,24 @@
             startScreen.style.display = 'none';
             birdTop = 250;
             score = 0;
+            pipeSpeed = 4; // Reset pipe speed
             pipes = [];
             scoreDisplay.textContent = '0';
 
-            gameInterval = setInterval(moveBird, 20);
+            // Start game loop
+            function gameLoop(timestamp) {
+                moveBird();
+                requestAnimationFrame(gameLoop);
+            }
+            requestAnimationFrame(gameLoop);
+
+            // Start pipe generation
             pipeInterval = setInterval(() => {
                 generatePipes();
-                movePipes();
             }, 2000);
+
+            // Start pipe movement
+            requestAnimationFrame(movePipes);
         }
 
         // Event listeners for jumping
